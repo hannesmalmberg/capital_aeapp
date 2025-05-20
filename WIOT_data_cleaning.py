@@ -12,9 +12,11 @@ import pandas as pd
 
 #%%
 ### Read in excel data
+path_in = '@Import/data_raw/'
+path_out = '@Import/data_intermediate/'
 try:
-    WIOT1997 = pd.read_excel('/Users/yutongzhong/Library/CloudStorage/Dropbox/Hannes RA work/Capital theory/Python codes/WIOT97_ROW_Apr12.xlsx')
-    Description = pd.read_stata('/Users/yutongzhong/Library/CloudStorage/Dropbox/Hannes RA work/Capital theory/Python codes/Ding_data/WIOT_MK_97_finalcode_desc.dta')
+    WIOT1997 = pd.read_excel(path_in + 'WIOT/WIOTS_in_EXCEL/WIOT97_ROW_Apr12.xlsx')
+    Description = pd.read_stata(path_in + 'Ding_data/WIOT_MK_97_finalcode_desc.dta')
 
 except FileNotFoundError:
     print(f"File not found: {'WIOT97_ROW_Apr12.xlsx'}")
@@ -191,13 +193,13 @@ for i, mat in enumerate(mat_list):
 # %%
 ### Export values to mat file
 mdic = {'VA': vec_list[0], 'grossout': vec_list[1], 'Inventory': mat_list[0], 'IO': IO, 'consumption': mat_list[1], 'GFCF': mat_list[2]}
-scipy.io.savemat("WIOT1997.mat", mdic)
+scipy.io.savemat(path_out + "WIOT1997.mat", mdic)
 
 #%%
 ### Read in excel data for WIOT SEA data (everything in millions)
 years = np.arange(1995, 2010)
 try:
-    SEA = pd.read_excel('/Users/yutongzhong/Library/CloudStorage/Dropbox/Hannes RA work/Capital theory/Python codes/Socio_Economic_Accounts_July14.xlsx', sheet_name='DATA')
+    SEA = pd.read_excel(path_in + 'WIOT/Socio_Economic_Accounts_July14.xlsx', sheet_name='DATA')
     SEA_data = SEA.loc[:, ['Country', 'Variable', 'Code', *[f'_{year}' for year in years]]]
 
 except FileNotFoundError:
@@ -344,6 +346,8 @@ gos_over_GFCF_ratio_mean = np.mean(gos_over_GFCF_ratio_years, axis=1) ## shape: 
 
 # %%
 ### Export values to mat file
-mdic1 = {'HS_labor': labor_list[0], 'MS_labor': labor_list[1], 'LS_labor': labor_list[2], 'tot_labor': labor_list[3], 'grossout_national': labor_list[4], 'capital_comp': labor_list[5], 'average_gos_GFCF_ratio': gos_over_GFCF_ratio_mean}
-scipy.io.savemat("/Users/yutongzhong/Library/CloudStorage/Dropbox/Hannes RA work/Capital theory/Python codes/SEA1997.mat", mdic1)
+mdic1 = {'HS_labor': labor_list[0], 'MS_labor': labor_list[1], 'LS_labor': labor_list[2],
+         'tot_labor': labor_list[3], 'grossout_national': labor_list[4],
+         'capital_comp': labor_list[5], 'average_gos_GFCF_ratio': gos_over_GFCF_ratio_mean}
+scipy.io.savemat(path_out + "SEA1997.mat", mdic1)
 # %%
