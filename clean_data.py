@@ -8,21 +8,17 @@ def make_intermediate_pkls(Ns = 27,Nr = 41):
     
     
     path = "@Import/"
-    try:
-        CapitalData = pd.read_stata(path+'data_raw/Ding_data/WIOT_MK_97_clean_41c_v01.dta')
-        Description = pd.read_stata(path+'data_raw/Ding_data/WIOT_MK_97_finalcode_desc.dta')
-        CapitalData = CapitalData.sort_values(by=['Country_out', 'finalcode_out', \
-                                                  'Country_in', 'finalcode_in'])
+    CapitalData = pd.read_stata(path+'data_raw/Ding_data/WIOT_MK_97_clean_41c_v01.dta')
+    Description = pd.read_stata(path+'data_raw/Ding_data/WIOT_MK_97_finalcode_desc.dta')
+    CapitalData = CapitalData.sort_values(by=['Country_out', 'finalcode_out', \
+                                                'Country_in', 'finalcode_in'])
         # sorted by n --> j --> i --> k
         # n (country out)
         # j (finalcode out)
         # i (country in)
         # k (finalcode in)
 
-    except FileNotFoundError:
-        print(f"File not found: {'@Import@Import/data_raw/Ding_data/WIOT_MK_97_clean_41c_v01.dta'}")
-    except IOError:
-        print(f"Error reading file: {'@Import/data_raw/Ding_data/WIOT_MK_97_clean_41c_v01.dta'}")
+
 
     # value added (sub-parts)
     '''
@@ -59,84 +55,59 @@ def make_intermediate_pkls(Ns = 27,Nr = 41):
     ## NOTE: Ding's data np.sum(inv_flows_njik, axis=(1,2)) is the same as WIOT data np.sum(np.reshape(GFCF, (41, 27, 41)), axis=(0)).T
     
     ### Import WIOT 1997 data
-    try:
-        WIOT1997 = scipy.io.loadmat(path + "data_intermediate/WIOT1997.mat")
-       
-        VA_original = WIOT1997['VA'].flatten() # 1107 x 1
-        grossout    = WIOT1997['grossout'].flatten() # output 1107 x 1
-        IO          = WIOT1997['IO'].T # 1107 x 1107 ### transpose to be purchasing x producing matrix
-        consumption_original = WIOT1997['consumption'] # 1107 x 41
-        GFCF        = WIOT1997['GFCF'] # 1107 x 41
-        inventory_change = WIOT1997['Inventory'] # 1107 x 41
-       
-        ## adjustment to value added such that row sums and column sums are the same (they are not the same because of international transport margins)
-        VA = grossout - np.sum(IO, axis=1)
-        VA_adjust_ratio = np.divide(VA, VA_original, out=np.zeros_like(VA), where=VA_original!=0)
-        ### adjustment to consumption such that it includes inventory change
-        consumption = consumption_original + inventory_change
+    WIOT1997 = scipy.io.loadmat(path + "data_intermediate/WIOT1997.mat")
+    
+    VA_original = WIOT1997['VA'].flatten() # 1107 x 1
+    grossout    = WIOT1997['grossout'].flatten() # output 1107 x 1
+    IO          = WIOT1997['IO'].T # 1107 x 1107 ### transpose to be purchasing x producing matrix
+    consumption_original = WIOT1997['consumption'] # 1107 x 41
+    GFCF        = WIOT1997['GFCF'] # 1107 x 41
+    inventory_change = WIOT1997['Inventory'] # 1107 x 41
+    
+    ## adjustment to value added such that row sums and column sums are the same (they are not the same because of international transport margins)
+    VA = grossout - np.sum(IO, axis=1)
+    VA_adjust_ratio = np.divide(VA, VA_original, out=np.zeros_like(VA), where=VA_original!=0)
+    ### adjustment to consumption such that it includes inventory change
+    consumption = consumption_original + inventory_change
 
 
-    except FileNotFoundError:
-        print(f"File not found: {'WIOT1997.mat'}")
-    except IOError:
-        print(f"Error reading file: {'WIOT1997.mat'}")
+    WIOT95_09 = scipy.io.loadmat(path + 'data_intermediate/WIOT95_09.mat')
+    VA_95_09_original = WIOT95_09['VA'] # 15 x 1107 
+    grossout_95_09 = WIOT95_09['grossout'] # 15 x 1107 
+    IO_95_09 = np.transpose(WIOT95_09['IO'], (0, 2, 1)) # 15 x 1107 x 1107 ### transpose to be purchasing x producing matrix
+    consumption_95_09_original = WIOT95_09['consumption'] # 15 x 1107 x 41
+    GFCF_95_09 = WIOT95_09['GFCF'] # 15 x 1107 x 41
+    inventory_change_95_09 = WIOT95_09['Inventory'] # 15 x 1107 x 41
+    ### adjustment to value added such that row sums and column sums are the same (they are not the same because of international transport margins)
+    VA_95_09 = grossout_95_09 - np.sum(IO_95_09, axis=2)
 
-    ### Import WIOT 1995-2009 data (for time smoothing)
-    try:
-        WIOT95_09 = scipy.io.loadmat(path + 'data_intermediate/wiot/WIOT95_09.mat')
-        VA_95_09_original = WIOT95_09['VA'] # 15 x 1107 
-        grossout_95_09 = WIOT95_09['grossout'] # 15 x 1107 
-        IO_95_09 = np.transpose(WIOT95_09['IO'], (0, 2, 1)) # 15 x 1107 x 1107 ### transpose to be purchasing x producing matrix
-        consumption_95_09_original = WIOT95_09['consumption'] # 15 x 1107 x 41
-        GFCF_95_09 = WIOT95_09['GFCF'] # 15 x 1107 x 41
-        inventory_change_95_09 = WIOT95_09['Inventory'] # 15 x 1107 x 41
-        ### adjustment to value added such that row sums and column sums are the same (they are not the same because of international transport margins)
-        VA_95_09 = grossout_95_09 - np.sum(IO_95_09, axis=2)
+    VA_adjust_ratio_95_09 = np.divide(VA_95_09, VA_95_09_original, out=np.zeros_like(VA_95_09), where=VA_95_09_original!=0) # 15 x 1107
+    ### adjustment to consumption such that it includes inventory change
+    consumption_95_09 = consumption_95_09_original + inventory_change_95_09
 
-        VA_adjust_ratio_95_09 = np.divide(VA_95_09, VA_95_09_original, out=np.zeros_like(VA_95_09), where=VA_95_09_original!=0) # 15 x 1107
-        ### adjustment to consumption such that it includes inventory change
-        consumption_95_09 = consumption_95_09_original + inventory_change_95_09
-
-    except FileNotFoundError:
-        print(f"File not found: {'WIOT95_09.mat'}")
-    except IOError:
-        print(f"Error reading file: {'WIOT95_09.mat'}")
     #### Sanity check
     # np.sum(GFCF.reshape(41, 27, 41), axis=0).T ## Suppose to equal to iflow_njik summing over ij
     inv_flows_njik_ratio = np.divide(inv_flows_njik, np.sum(np.reshape(GFCF, (41, 27, 41)), axis=0).T[:, None, None, :], out=np.zeros_like(inv_flows_njik), where=np.sum(np.reshape(GFCF, (41, 27, 41)), axis=0).T[:, None, None, :]!=0)
 
     ### Import WIOT SEA data
-    try:
-        SEA1997 = scipy.io.loadmat(path + 'data_intermediate/SEA1997.mat')
-        HS_labor = (SEA1997['HS_labor'] * VA_adjust_ratio[:40*27]).reshape(40, 27) # 1080 x 1
-        MS_labor = (SEA1997['MS_labor'] * VA_adjust_ratio[:40*27]).reshape(40, 27) # 1080 x 1
-        LS_labor = (SEA1997['LS_labor'] * VA_adjust_ratio[:40*27]).reshape(40, 27) # 1080 x 1
-        tot_labor = (SEA1997['tot_labor'] * VA_adjust_ratio[:40*27]).reshape(40, 27) # 1080 x 1
-        grossout_national = SEA1997['grossout_national'].reshape(40, 27) # 1080 x 1
-        capital_comp = (SEA1997['capital_comp'] * VA_adjust_ratio[:40*27]).reshape(40, 27) 
-        average_gos_GFCF_ratio = SEA1997['average_gos_GFCF_ratio'].reshape(40, 27)  # 1080 x 1
-
-
-    except FileNotFoundError:
-        print(f"File not found: {'SEA1997.mat'}")
-    except IOError:
-        print(f"Error reading file: {'SEA1997.mat'}")
+    SEA1997 = scipy.io.loadmat(path + 'data_intermediate/SEA1997.mat')
+    HS_labor = (SEA1997['HS_labor'] * VA_adjust_ratio[:40*27]).reshape(40, 27) # 1080 x 1
+    MS_labor = (SEA1997['MS_labor'] * VA_adjust_ratio[:40*27]).reshape(40, 27) # 1080 x 1
+    LS_labor = (SEA1997['LS_labor'] * VA_adjust_ratio[:40*27]).reshape(40, 27) # 1080 x 1
+    tot_labor = (SEA1997['tot_labor'] * VA_adjust_ratio[:40*27]).reshape(40, 27) # 1080 x 1
+    grossout_national = SEA1997['grossout_national'].reshape(40, 27) # 1080 x 1
+    capital_comp = (SEA1997['capital_comp'] * VA_adjust_ratio[:40*27]).reshape(40, 27) 
+    average_gos_GFCF_ratio = SEA1997['average_gos_GFCF_ratio'].reshape(40, 27)  # 1080 x 1
 
 
     ### Import SEA 1995-2009 data (for time smoothing)
-    try:
-        SEA95_09 = scipy.io.loadmat(path + 'data_intermediate/SEA95_09.mat')
-        HS_labor95_09 = (SEA95_09['HS_labor_95_09'] * VA_adjust_ratio_95_09[:,:40*27].T).reshape(40, 27, 15) # 1080 x 15
-        MS_labor95_09 = (SEA95_09['MS_labor_95_09'] * VA_adjust_ratio_95_09[:,:40*27].T).reshape(40, 27, 15) # 1080 x 15
-        LS_labor95_09 = (SEA95_09['LS_labor_95_09'] * VA_adjust_ratio_95_09[:,:40*27].T).reshape(40, 27, 15) # 1080 x 15
-        tot_labor95_09 = (SEA95_09['tot_labor_95_09'] * VA_adjust_ratio_95_09[:,:40*27].T).reshape(40, 27, 15) # 1080 x 15
-        grossout_national95_09 = np.reshape(SEA95_09['grossout_national_95_09'].T, (15, 40, 27)) # 1080 x 15
-        capital_comp95_09 = (SEA95_09['capital_comp_95_09'] * VA_adjust_ratio_95_09[:,:40*27].T).reshape(40, 27, 15) # 1080 x 15
-
-    except FileNotFoundError:
-        print(f"File not found: {'SEA95_09.mat'}")
-    except IOError:
-        print(f"Error reading file: {'SEA95_09.mat'}")
+    SEA95_09 = scipy.io.loadmat(path + 'data_intermediate/SEA95_09.mat')
+    HS_labor95_09 = (SEA95_09['HS_labor_95_09'] * VA_adjust_ratio_95_09[:,:40*27].T).reshape(40, 27, 15) # 1080 x 15
+    MS_labor95_09 = (SEA95_09['MS_labor_95_09'] * VA_adjust_ratio_95_09[:,:40*27].T).reshape(40, 27, 15) # 1080 x 15
+    LS_labor95_09 = (SEA95_09['LS_labor_95_09'] * VA_adjust_ratio_95_09[:,:40*27].T).reshape(40, 27, 15) # 1080 x 15
+    tot_labor95_09 = (SEA95_09['tot_labor_95_09'] * VA_adjust_ratio_95_09[:,:40*27].T).reshape(40, 27, 15) # 1080 x 15
+    grossout_national95_09 = np.reshape(SEA95_09['grossout_national_95_09'].T, (15, 40, 27)) # 1080 x 15
+    capital_comp95_09 = (SEA95_09['capital_comp_95_09'] * VA_adjust_ratio_95_09[:,:40*27].T).reshape(40, 27, 15) # 1080 x 15
 
 
     ### Compute implicit currency exchange using gross output data and harmonize SEA data
@@ -239,13 +210,9 @@ def make_intermediate_pkls(Ns = 27,Nr = 41):
 
 
     ### Read in depreciation rate and capital stock in the US
-    try:
-        net_stock_data = pd.read_excel(path+'data_raw/BEA_net_stock.xlsx').iloc[6:-7,2:].to_numpy()
-        depreciation_data = pd.read_excel(path+'data_raw/BEA_depreciation.xlsx').iloc[6:-7,2:].to_numpy()
-    except FileNotFoundError:
-        print(f"File not found")
-    except IOError:
-        print(f"Error reading file")
+    net_stock_data = pd.read_excel(path+'data_raw/BEA_net_stock.xlsx').iloc[6:-7,2:].to_numpy()
+    depreciation_data = pd.read_excel(path+'data_raw/BEA_depreciation.xlsx').iloc[6:-7,2:].to_numpy()
+    
 
     net_stock_data_1997 = 1000 * net_stock_data[:,1997-1947]
     depreciation_data_1997 = 1000 * depreciation_data[:,1997-1947]
