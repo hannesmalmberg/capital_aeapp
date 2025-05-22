@@ -685,4 +685,3 @@ mdic1 = {'HS_labor': labor_list[0], 'MS_labor': labor_list[1], 'LS_labor': labor
          'tot_labor': labor_list[3], 'grossout_national': labor_list[4],
          'capital_comp': labor_list[5], 'average_gos_GFCF_ratio': gos_over_GFCF_ratio_mean}
 scipy.io.savemat(path_out + "SEA1997.mat", mdic1)
-# %%
